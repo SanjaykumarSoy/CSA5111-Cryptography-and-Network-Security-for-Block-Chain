@@ -1,0 +1,50 @@
+import zlib
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+
+def compress_data(data):
+    return zlib.compress(data)
+
+def decompress_data(data):
+    return zlib.decompress(data)
+
+def encrypt_data(plaintext, key):
+    cipher = AES.new(key, AES.MODE_GCM)
+    ciphertext, tag = cipher.encrypt_and_digest(plaintext)
+    return cipher.nonce, ciphertext, tag
+
+def decrypt_data(nonce, ciphertext, tag, key):
+    cipher = AES.new(key, AES.MODE_GCM, nonce=nonce)
+    return cipher.decrypt_and_verify(ciphertext, tag)
+
+def main():
+    # Original text
+    input_text = "This is a test message for compression and AES-256-GCM encryption."
+    print("📥 Original text:", input_text)
+
+    # Step 1: Compress
+    input_bytes = input_text.encode()
+    compressed = compress_data(input_bytes)
+    print("✅ Compressed length:", len(compressed))
+
+    # Step 2: Encrypt
+    key = get_random_bytes(32)  # AES-256 requires 32-byte key
+    nonce, ciphertext, tag = encrypt_data(compressed, key)
+    print("🔒 Encrypted length:", len(ciphertext))
+
+    # Step 3: Decrypt
+    decrypted_compressed = decrypt_data(nonce, ciphertext, tag, key)
+
+    # Step 4: Decompress
+    output_bytes = decompress_data(decrypted_compressed)
+    output_text = output_bytes.decode()
+    print("🔓 Decrypted text:", output_text)
+
+    # Final check
+    if input_text == output_text:
+        print("\n🎉 Success! Original and decrypted texts match.")
+    else:
+        print("\n❌ Mismatch detected.")
+
+# Run
+main()
